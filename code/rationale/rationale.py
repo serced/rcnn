@@ -3,7 +3,7 @@ import os, sys, gzip
 import time
 import math
 import json
-import cPickle as pickle
+import pickle
 
 import numpy as np
 import theano
@@ -139,7 +139,7 @@ class Generator(object):
         l2_cost = l2_cost * args.l2_reg
 
         cost = self.cost = cost_logpz * 10 + l2_cost
-        print "cost.dtype", cost.dtype
+        print("cost.dtype", cost.dtype)
 
         self.cost_e = loss * 10 + encoder.l2_cost
 
@@ -580,7 +580,7 @@ class Model(object):
 
 
 def main():
-    print args
+    print(args)
     assert args.embedding, "Pre-trained word embeddings required."
 
     embedding_layer = myio.create_embedding_layer(
