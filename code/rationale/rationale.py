@@ -7,6 +7,7 @@ import pickle
 
 import numpy as np
 import theano
+theano.config.floatX = 'float32'
 import theano.tensor as T
 from theano.sandbox.rng_mrg import MRG_RandomStreams
 
@@ -139,7 +140,7 @@ class Generator(object):
         l2_cost = l2_cost * args.l2_reg
 
         cost = self.cost = cost_logpz * 10 + l2_cost
-        print("cost.dtype", cost.dtype)
+        print "cost.dtype", cost.dtype
 
         self.cost_e = loss * 10 + encoder.l2_cost
 
@@ -234,11 +235,14 @@ class Encoder(object):
         # batch * nclasses
         preds = self.preds = output_layer.forward(h_final)
 
+        preds_mask = preds > 0.5
+        
         # batch
-        loss_mat = self.loss_mat = (preds-y)**2
+        # loss_mat = self.loss_mat = (preds-y)**2
+        loss_mat = self.loss_mat = T.nnet.binary_crossentropy(preds, y)
         loss = self.loss = T.mean(loss_mat)
 
-        pred_diff = self.pred_diff = T.mean(T.max(preds, axis=1) - T.min(preds, axis=1))
+        # pred_diff = self.pred_diff = T.mean(T.max(preds, axis=1) - T.min(preds, axis=1))
 
         params = self.params = [ ]
         for l in layers + [ output_layer ]:
@@ -258,6 +262,8 @@ class Encoder(object):
         self.l2_cost = l2_cost
 
         cost = self.cost = loss * 10 + l2_cost
+        print T.sum(T.ones_like(y))
+        self.accuracy = T.sum(T.eq(preds_mask, y)) / T.sum(T.ones_like(y))
 
 class Model(object):
 
@@ -368,7 +374,7 @@ class Model(object):
                 inputs = [ self.x ],
                 outputs = self.z_pred,
                 #updates = self.generator.sample_updates
-                #allow_input_downcast = True
+                # allow_input_downcast = True
             )
 
         get_loss_and_pred = theano.function(
@@ -379,7 +385,7 @@ class Model(object):
         eval_generator = theano.function(
                 inputs = [ self.x, self.y ],
                 outputs = [ self.z, self.generator.obj, self.generator.loss,
-                                self.encoder.pred_diff ],
+                                self.encoder.accuracy ],
                 givens = {
                     self.z : self.generator.z_pred
                 },
@@ -390,7 +396,7 @@ class Model(object):
         train_generator = theano.function(
                 inputs = [ self.x, self.y ],
                 outputs = [ self.generator.obj, self.generator.loss, \
-                                self.generator.sparsity_cost, self.z, gnorm_g, gnorm_e ],
+                                self.generator.sparsity_cost, self.z, gnorm_g, gnorm_e , self.encoder.accuracy],
                 givens = {
                     self.z : self.generator.z_pred
                 },
@@ -418,6 +424,7 @@ class Model(object):
             train_loss = 0.0
             train_sparsity_cost = 0.0
             p1 = 0.0
+            train_accuracy = 0.0
             start_time = time.time()
 
             N = len(train_batches_x)
@@ -428,7 +435,7 @@ class Model(object):
                 bx, by = train_batches_x[i], train_batches_y[i]
                 mask = bx != padding_id
 
-                cost, loss, sparsity_cost, bz, gl2_g, gl2_e = train_generator(bx, by)
+                cost, loss, sparsity_cost, bz, gl2_g, gl2_e, accuracy = train_generator(bx, by)
 
                 k = len(by)
                 processed += k
@@ -436,12 +443,13 @@ class Model(object):
                 train_loss += loss
                 train_sparsity_cost += sparsity_cost
                 p1 += np.sum(bz*mask) / (np.sum(mask)+1e-8)
+                train_accuracy += accuracy
 
                 if (i == N-1) or (eval_period > 0 and processed/eval_period >
                                     (processed-k)/eval_period):
                     say("\n")
                     say(("Generator Epoch {:.2f}  costg={:.4f}  scost={:.4f}  lossg={:.4f}  " +
-                        "p[1]={:.2f}  |g|={:.4f} {:.4f}\t[{:.2f}m / {:.2f}m]\n").format(
+                        "p[1]={:.2f}  |g|={:.4f} {:.4f}\t[{:.2f}m / {:.2f}m]  accuracy={:.4f}\n ").format(
                             epoch+(i+1.0)/N,
                             train_cost / (i+1),
                             train_sparsity_cost / (i+1),
@@ -450,16 +458,17 @@ class Model(object):
                             float(gl2_g),
                             float(gl2_e),
                             (time.time()-start_time)/60.0,
-                            (time.time()-start_time)/60.0/(i+1)*N
+                            (time.time()-start_time)/60.0/(i+1)*N,
+                            train_accuracy / (i+1)
                         ))
-                    say("\t"+str([ "{:.1f}".format(np.linalg.norm(x.get_value(borrow=True))) \
-                                    for x in self.encoder.params ])+"\n")
-                    say("\t"+str([ "{:.1f}".format(np.linalg.norm(x.get_value(borrow=True))) \
-                                    for x in self.generator.params ])+"\n")
+                    # say("\t"+str([ "{:.1f}".format(np.linalg.norm(x.get_value(borrow=True))) \
+                    #                 for x in self.encoder.params ])+"\n")
+                    # say("\t"+str([ "{:.1f}".format(np.linalg.norm(x.get_value(borrow=True))) \
+                    #                 for x in self.generator.params ])+"\n")
 
                     if dev:
                         self.dropout.set_value(0.0)
-                        dev_obj, dev_loss, dev_diff, dev_p1 = self.evaluate_data(
+                        dev_obj, dev_loss, dev_acc, dev_p1 = self.evaluate_data(
                                 dev_batches_x, dev_batches_y, eval_generator, sampling=True)
 
                         if dev_obj < best_dev:
@@ -472,13 +481,14 @@ class Model(object):
                             if args.save_model:
                                 self.save_model(args.save_model, args)
 
-                        say(("\tsampling devg={:.4f}  mseg={:.4f}  avg_diffg={:.4f}" +
-                                    "  p[1]g={:.2f}  best_dev={:.4f}\n").format(
+                        say(("\tsampling devg={:.4f}  mseg={:.4f}" +
+                                    "  best_dev={:.4f}  accuracy={:.4f}\n").format(
                             dev_obj,
                             dev_loss,
-                            dev_diff,
-                            dev_p1,
-                            best_dev
+                            # dev_diff,
+                            # dev_p1,
+                            best_dev,
+                            dev_acc
                         ))
 
                         if rationale_data is not None:
@@ -580,7 +590,7 @@ class Model(object):
 
 
 def main():
-    print(args)
+    print args
     assert args.embedding, "Pre-trained word embeddings required."
 
     embedding_layer = myio.create_embedding_layer(
@@ -590,12 +600,23 @@ def main():
     max_len = args.max_len
 
     if args.train:
-        train_x, train_y = myio.read_annotations(args.train)
+        # train_x, train_y = myio.read_annotations(args.train)
+        print args.train
+        train_x, train_y = myio.get_reviews(args.train, data_name='rt-polarity', split='train')
+        # print train_x
+        # print train_y
         train_x = [ embedding_layer.map_to_ids(x)[:max_len] for x in train_x ]
+        # print train_x
+        print embedding_layer.vocab_map["<padding>"]
 
     if args.dev:
-        dev_x, dev_y = myio.read_annotations(args.dev)
+        # dev_x, dev_y = myio.read_annotations(args.dev)
+        dev_x, dev_y = myio.get_reviews(args.dev, data_name='rt-polarity', split='val')
+        # print dev_y
+        # print dev_x
         dev_x = [ embedding_layer.map_to_ids(x)[:max_len] for x in dev_x ]
+        # print dev_x
+        # print dev_y
 
     if args.load_rationale:
         rationale_data = myio.read_rationales(args.load_rationale)
@@ -603,10 +624,11 @@ def main():
             x["xids"] = embedding_layer.map_to_ids(x["x"])
 
     if args.train:
+        # print len(train_y[0])
         model = Model(
                     args = args,
                     embedding_layer = embedding_layer,
-                    nclasses = len(train_y[0])
+                    nclasses = 1 #len(train_y[0])
                 )
         model.ready()
 
@@ -629,8 +651,8 @@ def main():
         # compile an evaluation function
         eval_func = theano.function(
                 inputs = [ model.x, model.y ],
-                outputs = [ model.z, model.generator.obj, model.generator.loss,
-                                model.encoder.pred_diff ],
+                outputs = [ model.z, model.generator.obj, model.generator.loss],
+                                # model.encoder.pred_diff ],
                 givens = {
                     model.z : model.generator.z_pred
                 },

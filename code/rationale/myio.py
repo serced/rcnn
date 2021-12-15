@@ -2,12 +2,17 @@
 import gzip
 import random
 import json
+import os
+import cPickle as pickle
 
 import theano
 import numpy as np
 
 from nn import EmbeddingLayer
 from utils import say, load_embedding_iterator
+
+from nltk.tokenize.treebank import TreebankWordTokenizer, TreebankWordDetokenizer
+detok = TreebankWordDetokenizer()
 
 def read_rationales(path):
     data = [ ]
@@ -37,6 +42,52 @@ def read_annotations(path):
     ))
     return data_x, data_y
 
+def get_reviews(data_dir, data_name, split="train"):
+    """ import the rotten tomatoes movie review dataset
+    Args:
+        data_dir (str): path to directory containing the data files
+        data_name (str): name of the data files
+        split (str "train"): data split
+    Returns:
+        features and labels
+    """
+    assert split in [
+        'train', 'val', 'test'], "Split not valid, has to be 'train', 'val', or 'test'"
+    split = "dev" if split == "val" else split
+
+    text, labels = [], []
+
+    set_dir = os.path.join(data_dir, data_name, split)
+    text_tmp = pickle.load(
+        open(os.path.join(set_dir, 'word_sequences') + '.pkl', 'rb'))
+    # join tokenized sentences back to full sentences for sentenceBert
+    # text_tmp = [detok.detokenize(sub_list) for sub_list in text_tmp]
+    text.append(text_tmp)
+    label_tmp = pickle.load(
+        open(os.path.join(set_dir, 'labels') + '.pkl', 'rb'))
+    # convert 'pos' & 'neg' to 1 & 0
+    print split
+    # label_tmp = convert_label(label_tmp)
+    labels.append(label_tmp)
+    return text[0], labels[0]
+
+def convert_label(labels):
+    """ Convert str labels into integers.
+    Args:
+        labels (Sequence): list of labels
+    returns
+        converted labels with integer mapping
+    """
+    converted_labels = []
+    print labels
+    for i, label in enumerate(labels):
+        if label == 'pos':
+            # it will be subtracted by 1 in hte label pipeline
+            converted_labels.append(2)
+        elif label == 'neg':
+            converted_labels.append(1)
+    return converted_labels
+
 def create_embedding_layer(path):
     embedding_layer = EmbeddingLayer(
             n_d = 200,
@@ -53,6 +104,7 @@ def create_batches(x, y, batch_size, padding_id, sort=True):
     batches_x, batches_y = [ ], [ ]
     N = len(x)
     M = (N-1)/batch_size + 1
+    # print y
     if sort:
         perm = range(N)
         perm = sorted(perm, key=lambda i: len(x[i]))
