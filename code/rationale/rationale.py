@@ -140,7 +140,7 @@ class Generator(object):
         l2_cost = l2_cost * args.l2_reg
 
         cost = self.cost = cost_logpz * 10 + l2_cost
-        print "cost.dtype", cost.dtype
+        # print "cost.dtype", cost.dtype
 
         self.cost_e = loss * 10 + encoder.l2_cost
 
@@ -262,7 +262,7 @@ class Encoder(object):
         self.l2_cost = l2_cost
 
         cost = self.cost = loss * 10 + l2_cost
-        print T.sum(T.ones_like(y))
+        # print T.sum(T.ones_like(y))
         self.accuracy = T.sum(T.eq(preds_mask, y)) / T.sum(T.ones_like(y))
 
 class Model(object):
@@ -479,6 +479,8 @@ class Model(object):
                                             get_loss_and_pred, sample_generator)
 
                             if args.save_model:
+                                # if not os.path.exists(args.save_model):
+                                #     os.makedirs(args.save_model)
                                 self.save_model(args.save_model, args)
 
                         say(("\tsampling devg={:.4f}  mseg={:.4f}" +
@@ -504,6 +506,47 @@ class Model(object):
                             ))
 
                         self.dropout.set_value(dropout_prob)
+
+        if test:
+            
+
+            # load best model from training, if stored
+            if args.save_model:
+                print 'loading best model from training'
+                self.load_model(args.save_model)
+            
+            self.dropout.set_value(0.0)
+            test_obj, test_loss, test_acc, test_p1 = self.evaluate_data(
+                    test_batches_x, test_batches_y, eval_generator, sampling=True)
+
+
+            # if dev_obj < best_dev:
+            #     best_dev = dev_obj
+            #     unchanged = 0
+            #     if args.dump and rationale_data:
+            #         self.dump_rationales(args.dump, valid_batches_x, valid_batches_y,
+            #                     get_loss_and_pred, sample_generator)
+
+            #     if args.save_model:
+            #         self.save_model(args.save_model, args)
+
+            say(("\ttest accuracy={:.4f}\n").format(
+                test_acc
+            ))
+
+            # if rationale_data is not None:
+            #     r_mse, r_p1, r_prec1, r_prec2 = self.evaluate_rationale(
+            #             rationale_data, valid_batches_x,
+            #             valid_batches_y, eval_generator)
+            #     say(("\trationale mser={:.4f}  p[1]r={:.2f}  prec1={:.4f}" +
+            #                 "  prec2={:.4f}\n").format(
+            #             r_mse,
+            #             r_p1,
+            #             r_prec1,
+            #             r_prec2
+            #     ))
+
+            self.dropout.set_value(dropout_prob)
 
 
 
@@ -601,13 +644,13 @@ def main():
 
     if args.train:
         # train_x, train_y = myio.read_annotations(args.train)
-        print args.train
+        # print args.train
         train_x, train_y = myio.get_reviews(args.train, data_name='rt-polarity', split='train')
         # print train_x
         # print train_y
         train_x = [ embedding_layer.map_to_ids(x)[:max_len] for x in train_x ]
         # print train_x
-        print embedding_layer.vocab_map["<padding>"]
+        # print embedding_layer.vocab_map["<padding>"]
 
     if args.dev:
         # dev_x, dev_y = myio.read_annotations(args.dev)
@@ -617,6 +660,11 @@ def main():
         dev_x = [ embedding_layer.map_to_ids(x)[:max_len] for x in dev_x ]
         # print dev_x
         # print dev_y
+
+    if args.dev:
+        # testx, test_y = myio.read_annotations(args.test)
+        test_x, test_y = myio.get_reviews(args.test, data_name='rt-polarity', split='test')
+        test_x = [ embedding_layer.map_to_ids(x)[:max_len] for x in test_x ]
 
     if args.load_rationale:
         rationale_data = myio.read_rationales(args.load_rationale)
@@ -635,7 +683,7 @@ def main():
         model.train(
                 (train_x, train_y),
                 (dev_x, dev_y) if args.dev else None,
-                None, #(test_x, test_y),
+                (test_x, test_y),
                 rationale_data if args.load_rationale else None
             )
 
