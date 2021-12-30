@@ -413,7 +413,7 @@ class Model(object):
 
         for epoch in xrange(args.max_epochs):
             unchanged += 1
-            if unchanged > 10: return
+            if unchanged > 10: break
 
             train_batches_x, train_batches_y = myio.create_batches(
                             train[0], train[1], args.batch, padding_id
@@ -467,6 +467,7 @@ class Model(object):
                     #                 for x in self.generator.params ])+"\n")
 
                     if dev:
+                        print 'here 1'
                         self.dropout.set_value(0.0)
                         dev_obj, dev_loss, dev_acc, dev_p1 = self.evaluate_data(
                                 dev_batches_x, dev_batches_y, eval_generator, sampling=True)
@@ -475,6 +476,7 @@ class Model(object):
                             best_dev = dev_obj
                             unchanged = 0
                             if args.dump and rationale_data:
+                                print 'here 2'
                                 self.dump_rationales(args.dump, valid_batches_x, valid_batches_y,
                                             get_loss_and_pred, sample_generator)
 
@@ -646,7 +648,7 @@ def main():
         # train_x, train_y = myio.read_annotations(args.train)
         # print args.train
         train_x, train_y = myio.get_reviews(args.train, data_name='rt-polarity', split='train')
-        # print train_x
+        print train_x[0]
         # print train_y
         train_x = [ embedding_layer.map_to_ids(x)[:max_len] for x in train_x ]
         # print train_x
@@ -655,7 +657,7 @@ def main():
     if args.dev:
         # dev_x, dev_y = myio.read_annotations(args.dev)
         dev_x, dev_y = myio.get_reviews(args.dev, data_name='rt-polarity', split='val')
-        # print dev_y
+        print dev_x[0]
         # print dev_x
         dev_x = [ embedding_layer.map_to_ids(x)[:max_len] for x in dev_x ]
         # print dev_x
