@@ -668,23 +668,14 @@ def main():
     max_len = args.max_len
 
     if args.train:
-        # train_x, train_y = myio.read_annotations(args.train)
-        # print args.train
         train_x, train_y = myio.get_reviews_rational(args.train, data_name='movies', split='train')
-        print train_x[0]
-        # print train_y
         train_x = [ embedding_layer.map_to_ids(x)[:max_len] for x in train_x ]
-        # print train_x
-        # print embedding_layer.vocab_map["<padding>"]
+   
 
     if args.dev:
-        # dev_x, dev_y = myio.read_annotations(args.dev)
         dev_x, dev_y = myio.get_reviews_rational(args.dev, data_name='movies', split='val')
-        print dev_x[0]
-        # print dev_x
         dev_x = [ embedding_layer.map_to_ids(x)[:max_len] for x in dev_x ]
-        # print dev_x
-        # print dev_y
+
 
     if args.test:
         # testx, test_y = myio.read_annotations(args.test)
