@@ -554,6 +554,9 @@ class Model(object):
                 test_acc_norat
             ))
 
+            say("Sufficiency: {}\n".format((preds[0] - preds_rat[0]).mean()))
+            say("Comprehensiveness: {}\n".format((preds[0] - preds_norat[0]).mean()))
+
             # if rationale_data is not None:
             #     r_mse, r_p1, r_prec1, r_prec2 = self.evaluate_rationale(
             #             rationale_data, valid_batches_x,
