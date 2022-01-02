@@ -467,7 +467,6 @@ class Model(object):
                     #                 for x in self.generator.params ])+"\n")
 
                     if dev:
-                        print 'here 1'
                         self.dropout.set_value(0.0)
                         dev_obj, dev_loss, dev_acc, dev_p1 = self.evaluate_data(
                                 dev_batches_x, dev_batches_y, eval_generator, sampling=True)
@@ -476,7 +475,6 @@ class Model(object):
                             best_dev = dev_obj
                             unchanged = 0
                             if args.dump and rationale_data:
-                                print 'here 2'
                                 self.dump_rationales(args.dump, valid_batches_x, valid_batches_y,
                                             get_loss_and_pred, sample_generator)
 

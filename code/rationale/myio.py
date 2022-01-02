@@ -10,7 +10,6 @@ import numpy as np
 
 from nn import EmbeddingLayer
 from utils import say, load_embedding_iterator
-
 from nltk.tokenize.treebank import TreebankWordTokenizer, TreebankWordDetokenizer
 detok = TreebankWordDetokenizer()
 
@@ -70,6 +69,44 @@ def get_reviews(data_dir, data_name, split="train"):
     # label_tmp = convert_label(label_tmp)
     labels.append(label_tmp)
     return text[0], labels[0]
+
+
+def get_reviews_rational(data_dir, data_name, split="train"):
+    """ import the rotten tomatoes movie review dataset
+    Args:
+        data_dir (str): path to directory containing the data files
+        data_name (str): name of the data files
+        split (str "train"): data split
+    Returns:
+        features and labels
+    """
+    labels = []
+    features = []
+    if split == "train":
+        import random
+        random.seed(42)  
+        ds = pickle.load(
+            open(os.path.join(data_dir, data_name, 'train_ds.pkl'), 'rb'))
+        random.shuffle(ds)
+    elif split == "val":
+        ds = pickle.load(
+            open(os.path.join(data_dir, data_name, 'val_ds.pkl'), 'rb'))
+    elif split == "test":
+        ds = pickle.load(
+            open(os.path.join(data_dir, data_name, 'test_ds_full.pkl'), 'rb'))
+    elif split == "test_rat":
+        ds = pickle.load(
+            open(os.path.join(data_dir, data_name, 'test_ds_rat.pkl'), 'rb'))
+    elif split == "test_norat":
+        ds = pickle.load(
+            open(os.path.join(data_dir, data_name, 'test_ds_norat.pkl'), 'rb'))
+    else:
+        exit()
+    for y,x in ds:
+            labels.append(y-1)
+            features.append(x.split(" "))
+    return features, labels
+
 
 def convert_label(labels):
     """ Convert str labels into integers.
