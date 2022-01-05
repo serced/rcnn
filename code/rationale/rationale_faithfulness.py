@@ -413,7 +413,7 @@ class Model(object):
 
         eval_period = args.eval_period
         unchanged = 0
-        best_dev = 1e+2
+        best_dev = 0
         best_dev_e = 1e+2
         dropout_prob = np.float64(args.dropout).astype(theano.config.floatX)
 
@@ -477,8 +477,8 @@ class Model(object):
                         dev_obj, dev_loss, dev_acc, dev_p1, preds = self.evaluate_data(
                                 dev_batches_x, dev_batches_y, eval_generator, sampling=True)
 
-                        if dev_obj < best_dev:
-                            best_dev = dev_obj
+                        if dev_acc > best_dev:
+                            best_dev = dev_acc
                             unchanged = 0
                             if args.dump and rationale_data:
                                 self.dump_rationales(args.dump, valid_batches_x, valid_batches_y,
@@ -553,7 +553,12 @@ class Model(object):
             say(("\tno rationale test accuracy={:.4f}\n").format(
                 test_acc_norat
             ))
+            class_predictions = preds[0] < 0.5
+            pred_proba = class_predictions - preds[0]
 
+            print preds[0][:10]
+            print class_predictions[:10]
+            print pred_proba[:10]
             say("Sufficiency: {}\n".format((preds[0] - preds_rat[0]).mean()))
             say("Comprehensiveness: {}\n".format((preds[0] - preds_norat[0]).mean()))
 
@@ -774,8 +779,13 @@ def main():
                 
         say("No Rationals Test Acc: {}\n".format(acc_norat))
 
-        say("Sufficiency: {}\n".format((preds[0] - preds_rat[0]).mean()))
-        say("Comprehensiveness: {}\n".format((preds[0] - preds_norat[0]).mean()))
+        class_predictions = preds[0] < 0.5
+        pred_proba = np.abs(class_predictions - preds[0])
+        pred_proba_rat = np.abs(class_predictions - preds_rat[0])
+        pred_proba_norat = np.abs(class_predictions - preds_norat[0])
+
+        say("Sufficiency: {}\n".format((pred_proba - pred_proba_rat).mean()))
+        say("Comprehensiveness: {}\n".format((pred_proba - pred_proba_norat).mean()))
 
 
 
