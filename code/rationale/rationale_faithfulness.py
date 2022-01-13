@@ -553,14 +553,13 @@ class Model(object):
             say(("\tno rationale test accuracy={:.4f}\n").format(
                 test_acc_norat
             ))
-            class_predictions = preds[0] < 0.5
-            pred_proba = class_predictions - preds[0]
-
-            print preds[0][:10]
-            print class_predictions[:10]
-            print pred_proba[:10]
-            say("Sufficiency: {}\n".format((preds[0] - preds_rat[0]).mean()))
-            say("Comprehensiveness: {}\n".format((preds[0] - preds_norat[0]).mean()))
+            #class_predictions = preds[0] < 0.5
+            pred_proba = np.abs(test[1] - preds[0])
+            pred_proba_rat = np.abs(test[1] - preds_rat[0])
+            pred_proba_norat = np.abs(test[1] - preds_norat[0])
+            
+            say("Sufficiency: {}\n".format((pred_proba - pred_proba_rat).mean()))
+            say("Comprehensiveness: {}\n".format((pred_proba_rat - pred_proba_norat).mean()))
 
             # if rationale_data is not None:
             #     r_mse, r_p1, r_prec1, r_prec2 = self.evaluate_rationale(
@@ -778,11 +777,9 @@ def main():
                 dev_batches_x_norat, dev_batches_y_norat, eval_func, sampling=True)
                 
         say("No Rationals Test Acc: {}\n".format(acc_norat))
-
-        class_predictions = preds[0] < 0.5
-        pred_proba = np.abs(class_predictions - preds[0])
-        pred_proba_rat = np.abs(class_predictions - preds_rat[0])
-        pred_proba_norat = np.abs(class_predictions - preds_norat[0])
+        pred_proba = np.abs(test_y - preds[0])
+        pred_proba_rat = np.abs(test_y - preds_rat[0])
+        pred_proba_norat = np.abs(test_y - preds_norat[0])
 
         say("Sufficiency: {}\n".format((pred_proba - pred_proba_rat).mean()))
         say("Comprehensiveness: {}\n".format((pred_proba - pred_proba_norat).mean()))
