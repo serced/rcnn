@@ -90,7 +90,7 @@ class Generator(object):
 
         # len*batch
         probs2 = probs.reshape(x.shape)
-        self.MRG_rng = MRG_RandomStreams()
+        self.MRG_rng = MRG_RandomStreams(seed=123)
         z_pred = self.z_pred = T.cast(self.MRG_rng.binomial(size=probs2.shape, p=probs2), "int8")
 
         # we are computing approximated gradient by sampling z;
@@ -419,7 +419,7 @@ class Model(object):
 
         for epoch in xrange(args.max_epochs):
             unchanged += 1
-            if unchanged > 10: break
+            # if unchanged > 10: break
 
             train_batches_x, train_batches_y = myio.create_batches(
                             train[0], train[1], args.batch, padding_id
@@ -559,7 +559,7 @@ class Model(object):
             pred_proba_norat = np.abs(np.ones_like(test[1]) - test[1] - preds_norat[0])
             
             say("Sufficiency: {}\n".format((pred_proba - pred_proba_rat).mean()))
-            say("Comprehensiveness: {}\n".format((pred_proba_rat - pred_proba_norat).mean()))
+            say("Comprehensiveness: {}\n".format((pred_proba - pred_proba_norat).mean()))
 
             # if rationale_data is not None:
             #     r_mse, r_p1, r_prec1, r_prec2 = self.evaluate_rationale(
@@ -777,6 +777,14 @@ def main():
                 dev_batches_x_norat, dev_batches_y_norat, eval_func, sampling=True)
                 
         say("No Rationals Test Acc: {}\n".format(acc_norat))
+        preds[0] = preds[0].ravel()
+        print np.ones_like(test_y)
+        print np.ones_like(test_y) - test_y
+        print test_y
+        print preds[0]
+        print np.ones_like(test_y) - test_y - preds[0]
+        print np.abs(np.ones_like(test_y) - test_y - preds[0])
+
         pred_proba = np.abs(np.ones_like(test_y) - test_y - preds[0]) 
         pred_proba_rat = np.abs(np.ones_like(test_y) - test_y - preds_rat[0])
         pred_proba_norat = np.abs(np.ones_like(test_y) - test_y - preds_norat[0])
