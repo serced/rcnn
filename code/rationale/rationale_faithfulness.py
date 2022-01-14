@@ -554,9 +554,9 @@ class Model(object):
                 test_acc_norat
             ))
             #class_predictions = preds[0] < 0.5
-            pred_proba = np.abs(test[1] - preds[0])
-            pred_proba_rat = np.abs(test[1] - preds_rat[0])
-            pred_proba_norat = np.abs(test[1] - preds_norat[0])
+            pred_proba = np.abs(np.ones_like(test[1]) - test[1] - preds[0]) 
+            pred_proba_rat = np.abs(np.ones_like(test[1]) - test[1] - preds_rat[0])
+            pred_proba_norat = np.abs(np.ones_like(test[1]) - test[1] - preds_norat[0])
             
             say("Sufficiency: {}\n".format((pred_proba - pred_proba_rat).mean()))
             say("Comprehensiveness: {}\n".format((pred_proba_rat - pred_proba_norat).mean()))
@@ -777,9 +777,13 @@ def main():
                 dev_batches_x_norat, dev_batches_y_norat, eval_func, sampling=True)
                 
         say("No Rationals Test Acc: {}\n".format(acc_norat))
-        pred_proba = np.abs(test_y - preds[0])
-        pred_proba_rat = np.abs(test_y - preds_rat[0])
-        pred_proba_norat = np.abs(test_y - preds_norat[0])
+        pred_proba = np.abs(np.ones_like(test_y) - test_y - preds[0]) 
+        pred_proba_rat = np.abs(np.ones_like(test_y) - test_y - preds_rat[0])
+        pred_proba_norat = np.abs(np.ones_like(test_y) - test_y - preds_norat[0])
+            
+        # pred_proba = np.abs(test_y - preds[0])
+        # pred_proba_rat = np.abs(test_y - preds_rat[0])
+        # pred_proba_norat = np.abs(test_y - preds_norat[0])
 
         say("Sufficiency: {}\n".format((pred_proba - pred_proba_rat).mean()))
         say("Comprehensiveness: {}\n".format((pred_proba - pred_proba_norat).mean()))
