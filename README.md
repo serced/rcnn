@@ -1,3 +1,11 @@
+## Rationale model baseline
+We forked the repo from https://github.com/taolei87/rcnn. 
+To run the model on the human annoted movie review dataset and compute comprehensiveness and sufficiency please go to [code/rationale](/code/rationale) and follow the README instructions there.
+
+
+Please find below the original README for further information.
+_______
+
 ### Latest updates
 Check [code/rationale](/code/rationale) for the project of learning rationales for neural prediction:  <p align="center">
 <img height =140 src="code/rationale/figures/example.png"> &nbsp; &nbsp; &nbsp; &nbsp; <img width=350 src="code/rationale/figures/model_framework.png">
