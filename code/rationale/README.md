@@ -1,10 +1,13 @@
 ## Rational Model Implementation
 The rational model serves as baseline model to which we compare the comprehensiveness and sufficiency interpretability metrics. The file rationale_faithfulness.py is an adaptation of rationale.py and computes the mentioned metrics as well. In addition, we added the human annotated movie review dataset as well as code to run the model on this.
 
-We used the following command to run the model:
-```
-python rationale_faithfulness.py --embedding ./data/review+wiki.filtered.200.txt.gz  --save_model ./saved_models/testrun --train ./data/ --dev ./data/ --test ./data/ --aspect 0 --dump outputs.json --sparsity 0.0003 --coherent 2.0 --max_epochs 100 --learning_rate 0.001
-```
+To recreate our results follow these steps:
+1. Clone this full RCNN repo (as the rationale code relies on other parts of it)
+Use: ```git clone https://github.com/serced/rcnn.git```
+2. Go to /code/rationale: ```cd /code/rationale```
+2. Create a virtual environment based on the rationale_env.yml file: ```conda env create -f rationale_env.yml```
+3. Run the experiment using the following command: 
+```python rationale_faithfulness.py --embedding ./data/review+wiki.filtered.200.txt.gz  --save_model ./saved_models/testrun --train ./data/ --dev ./data/ --test ./data/ --aspect 0 --dump outputs.json --sparsity 0.0003 --coherent 2.0 --max_epochs 100 --learning_rate 0.001```
 The rationale_faithfulness, automatically selects the human annotated movie review dataset this way.
 
 
