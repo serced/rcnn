@@ -13,7 +13,7 @@ cd .../code/rationale
 ```
 - 3. Create a virtual environment based on the rationale_env.yml file: 
 ```bash 
-conda env create -f rationale_env.yml
+conda env create -f rationale_env.yml python=2.7.18
 ```
 - 4. Activate the virtual environmnet 
 ```bash 
