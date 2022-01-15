@@ -581,6 +581,7 @@ class Model(object):
         padding_id = self.embedding_layer.vocab_map["<padding>"]
         tot_obj, tot_mse, tot_diff, p1 = 0.0, 0.0, 0.0, 0.0
         preds = []
+        labels = []
         for bx, by in zip(batches_x, batches_y):
             if not sampling:
                 e, d = eval_func(bx, by)
@@ -588,6 +589,7 @@ class Model(object):
                 mask = bx != padding_id
                 bz, o, e, d, pred = eval_func(bx, by)
                 preds.append(pred)
+                labels.append(by)
                 p1 += np.sum(bz*mask) / (np.sum(mask) + 1e-8)
                 tot_obj += o
             tot_mse += e
@@ -595,7 +597,7 @@ class Model(object):
         n = len(batches_x)
         if not sampling:
             return tot_mse/n, tot_diff/n
-        return tot_obj/n, tot_mse/n, tot_diff/n, p1/n, preds
+        return tot_obj/n, tot_mse/n, tot_diff/n, p1/n, preds, labels
 
     def evaluate_rationale(self, reviews, batches_x, batches_y, eval_func):
         args = self.args
@@ -764,40 +766,30 @@ def main():
 
         # disable dropout
         model.dropout.set_value(0.0)
-        _, _, acc_full, _, preds = model.evaluate_data(
+        _, _, acc_full, _, preds, labels = model.evaluate_data(
                 dev_batches_x, dev_batches_y, eval_func, sampling=True)
         say("Test Acc: {}\n".format(acc_full))
 
-        _, _, acc_rat, _, preds_rat = model.evaluate_data(
+        _, _, acc_rat, _, preds_rat, labels_rat = model.evaluate_data(
                 dev_batches_x_rat, dev_batches_y_rat, eval_func, sampling=True)
 
         say("Only Rational Test Acc: {}\n".format(acc_rat))
 
-        _, _, acc_norat, _, preds_norat = model.evaluate_data(
+        _, _, acc_norat, _, preds_norat, labels_norat = model.evaluate_data(
                 dev_batches_x_norat, dev_batches_y_norat, eval_func, sampling=True)
                 
         say("No Rationals Test Acc: {}\n".format(acc_norat))
-        preds[0] = preds[0].ravel()
-        preds_rat[0] = preds_rat[0].ravel()
-        preds_norat[0] = preds_norat[0].ravel()
-        # print np.ones_like(test_y)
-        # print np.ones_like(test_y) - test_y
-        # print test_y
-        # print preds[0]
-        # print np.ones_like(test_y) - test_y - preds[0]
-        # print np.abs(np.ones_like(test_y) - test_y - preds[0])
+        preds = preds[0].ravel()
+        labels = labels[0].ravel()
+        preds_rat = preds_rat[0].ravel()
+        labels_rat = labels_rat[0].ravel()
+        preds_norat = preds_norat[0].ravel()
+        labels_norat = labels_norat[0].ravel()
 
-        # print preds_rat[0]
-        # print preds_norat[0]
-
-        pred_proba = np.abs(np.ones_like(test_y) - test_y - preds[0]) 
-        pred_proba_rat = np.abs(np.ones_like(test_y) - test_y - preds_rat[0])
-        pred_proba_norat = np.abs(np.ones_like(test_y) - test_y - preds_norat[0])
+        pred_proba = np.abs(np.ones_like(labels) - labels - preds) 
+        pred_proba_rat = np.abs(np.ones_like(labels_rat) - labels_rat - preds_rat)
+        pred_proba_norat = np.abs(np.ones_like(labels_norat) - labels_norat - preds_norat)
             
-        # pred_proba = np.abs(test_y - preds[0])
-        # pred_proba_rat = np.abs(test_y - preds_rat[0])
-        # pred_proba_norat = np.abs(test_y - preds_norat[0])
-
         say("Sufficiency: {}\n".format((pred_proba - pred_proba_rat).mean()))
         say("Comprehensiveness: {}\n".format((pred_proba - pred_proba_norat).mean()))
 
