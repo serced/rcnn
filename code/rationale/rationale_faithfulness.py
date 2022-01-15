@@ -474,7 +474,7 @@ class Model(object):
 
                     if dev:
                         self.dropout.set_value(0.0)
-                        dev_obj, dev_loss, dev_acc, dev_p1, preds = self.evaluate_data(
+                        dev_obj, dev_loss, dev_acc, dev_p1, preds, lbls = self.evaluate_data(
                                 dev_batches_x, dev_batches_y, eval_generator, sampling=True)
 
                         if dev_acc > best_dev:
@@ -522,13 +522,13 @@ class Model(object):
                 self.load_model(args.save_model)
             
             self.dropout.set_value(0.0)
-            test_obj, test_loss, test_acc, test_p1, preds = self.evaluate_data(
+            test_obj, test_loss, test_acc, test_p1, preds, labels = self.evaluate_data(
                     test_batches_x, test_batches_y, eval_generator, sampling=True)
 
-            test_obj, test_loss, test_acc_rat, test_p1, preds_rat = self.evaluate_data(
+            test_obj, test_loss, test_acc_rat, test_p1, preds_rat, labels_rat = self.evaluate_data(
                     test_rat_batches_x, test_rat_batches_y, eval_generator, sampling=True)
 
-            test_obj, test_loss, test_acc_norat, test_p1, preds_norat = self.evaluate_data(
+            test_obj, test_loss, test_acc_norat, test_p1, preds_norat, labels_norat = self.evaluate_data(
                     test_norat_batches_x, test_norat_batches_y, eval_generator, sampling=True)
 
 
@@ -542,6 +542,13 @@ class Model(object):
             #     if args.save_model:
             #         self.save_model(args.save_model, args)
 
+            preds = preds[0].ravel()
+            labels = labels[0].ravel()
+            preds_rat = preds_rat[0].ravel()
+            labels_rat = labels_rat[0].ravel()
+            preds_norat = preds_norat[0].ravel()
+            labels_norat = labels_norat[0].ravel()
+
             say(("\ttest accuracy={:.4f}\n").format(
                 test_acc
             ))
@@ -554,9 +561,9 @@ class Model(object):
                 test_acc_norat
             ))
             #class_predictions = preds[0] < 0.5
-            pred_proba = np.abs(np.ones_like(test[1]) - test[1] - preds[0].ravel()) 
-            pred_proba_rat = np.abs(np.ones_like(test[1]) - test[1] - preds_rat[0].ravel())
-            pred_proba_norat = np.abs(np.ones_like(test[1]) - test[1] - preds_norat[0].ravel())
+            pred_proba = np.abs(np.ones_like(labels) - labels - preds.ravel()) 
+            pred_proba_rat = np.abs(np.ones_like(labels_rat) - labels_rat - preds_rat.ravel())
+            pred_proba_norat = np.abs(np.ones_like(labels_norat) - labels_norat - preds_norat.ravel())
             
             say("Sufficiency: {}\n".format((pred_proba - pred_proba_rat).mean()))
             say("Comprehensiveness: {}\n".format((pred_proba - pred_proba_norat).mean()))
