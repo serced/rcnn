@@ -554,9 +554,9 @@ class Model(object):
                 test_acc_norat
             ))
             #class_predictions = preds[0] < 0.5
-            pred_proba = np.abs(np.ones_like(test[1]) - test[1] - preds[0]) 
-            pred_proba_rat = np.abs(np.ones_like(test[1]) - test[1] - preds_rat[0])
-            pred_proba_norat = np.abs(np.ones_like(test[1]) - test[1] - preds_norat[0])
+            pred_proba = np.abs(np.ones_like(test[1]) - test[1] - preds[0].ravel()) 
+            pred_proba_rat = np.abs(np.ones_like(test[1]) - test[1] - preds_rat[0].ravel())
+            pred_proba_norat = np.abs(np.ones_like(test[1]) - test[1] - preds_norat[0].ravel())
             
             say("Sufficiency: {}\n".format((pred_proba - pred_proba_rat).mean()))
             say("Comprehensiveness: {}\n".format((pred_proba - pred_proba_norat).mean()))
@@ -778,12 +778,17 @@ def main():
                 
         say("No Rationals Test Acc: {}\n".format(acc_norat))
         preds[0] = preds[0].ravel()
-        print np.ones_like(test_y)
-        print np.ones_like(test_y) - test_y
-        print test_y
-        print preds[0]
-        print np.ones_like(test_y) - test_y - preds[0]
-        print np.abs(np.ones_like(test_y) - test_y - preds[0])
+        preds_rat[0] = preds_rat[0].ravel()
+        preds_norat[0] = preds_norat[0].ravel()
+        # print np.ones_like(test_y)
+        # print np.ones_like(test_y) - test_y
+        # print test_y
+        # print preds[0]
+        # print np.ones_like(test_y) - test_y - preds[0]
+        # print np.abs(np.ones_like(test_y) - test_y - preds[0])
+
+        # print preds_rat[0]
+        # print preds_norat[0]
 
         pred_proba = np.abs(np.ones_like(test_y) - test_y - preds[0]) 
         pred_proba_rat = np.abs(np.ones_like(test_y) - test_y - preds_rat[0])
