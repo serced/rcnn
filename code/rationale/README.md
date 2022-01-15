@@ -46,7 +46,7 @@ python rationale_faithfulness.py \
 ```bash
 python rationale_faithfulness.py \
 --embedding ./data/review+wiki.filtered.200.txt.gz  \
---load_model ./saved_models/testrun \
+--load_model ./saved_models/testrun_2 \
 --dev ./data/ \
 --test ./data/ \
 --aspect 0 \
